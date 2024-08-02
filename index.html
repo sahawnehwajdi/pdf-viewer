@@ -48,10 +48,10 @@
     <script type="module">
         import * as pdfjsLib from './js/pdf.mjs';
 
-        // Set the worker source path
+        // Specify the path to the PDF.js worker file
         pdfjsLib.GlobalWorkerOptions.workerSrc = './js/pdf.worker.mjs';
 
-        // Get the PDF URL from the query parameters
+        // Retrieve the PDF URL from the query parameters
         const urlParams = new URLSearchParams(window.location.search);
         const pdfUrl = urlParams.get('file');
 
