@@ -48,10 +48,10 @@
     <script type="module">
         import * as pdfjsLib from './js/pdf.mjs';
 
-        // Set the path to the PDF.js worker script
+        // Specify the worker script location
         pdfjsLib.GlobalWorkerOptions.workerSrc = './js/pdf.worker.mjs';
 
-        // Get the PDF URL from the query parameters
+        // Retrieve the PDF URL from the query parameters
         const urlParams = new URLSearchParams(window.location.search);
         const pdfUrl = urlParams.get('file');
 
@@ -60,10 +60,8 @@
             throw new Error("No PDF file specified in query parameters.");
         }
 
-        const loadingTask = pdfjsLib.getDocument({
-            url: pdfUrl,
-            withCredentials: true, // Ensure credentials are used to handle CORS
-        });
+        // Initiate the loading of the PDF
+        const loadingTask = pdfjsLib.getDocument(pdfUrl);
 
         let pdfDoc = null,
             pageNum = 1,
@@ -126,6 +124,9 @@
             pdfDoc = pdfDoc_;
             document.getElementById('pageCount').textContent = pdfDoc.numPages;
             renderPage(pageNum);
+        }).catch(error => {
+            console.error('Error during PDF loading:', error);
+            alert("Failed to load PDF: " + error.message);
         });
 
         document.getElementById('prev').addEventListener('click', onPrevPage);
