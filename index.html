@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Viewer</title>
+    <title>PDF Viewer with Markup Tools</title>
     <style>
         body {
             margin: 0;
@@ -18,13 +18,14 @@
             width: 80%;
             height: 90vh;
             border: 1px solid #ccc;
-            overflow: auto;
+            overflow: hidden;
             background-color: white;
-            margin-bottom: 10px;
+            position: relative;
         }
-        canvas {
-            display: block;
-            margin: 0 auto;
+        #pdfCanvas, #markupCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
         }
         .toolbar {
             display: flex;
@@ -34,6 +35,11 @@
         .toolbar button {
             margin: 0 5px;
         }
+        .tools {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -42,16 +48,21 @@
         <button id="next">Next Page</button>
         <span>Page: <span id="pageNum"></span> / <span id="pageCount"></span></span>
     </div>
+    <div class="tools">
+        <button id="draw">Draw</button>
+        <button id="highlight">Highlight</button>
+        <button id="addText">Add Text</button>
+        <button id="save">Save Markups</button>
+    </div>
     <div id="pdfViewer">
         <canvas id="pdfCanvas"></canvas>
+        <canvas id="markupCanvas"></canvas>
     </div>
     <script type="module">
         import * as pdfjsLib from './js/pdf.mjs';
 
-        // Specify the path to the PDF.js worker file
         pdfjsLib.GlobalWorkerOptions.workerSrc = './js/pdf.worker.mjs';
 
-        // Retrieve the PDF URL from the query parameters
         const urlParams = new URLSearchParams(window.location.search);
         const pdfUrl = urlParams.get('file');
 
@@ -60,7 +71,6 @@
             throw new Error("No PDF file specified in query parameters.");
         }
 
-        // Load the PDF
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
 
         let pdfDoc = null,
@@ -68,15 +78,19 @@
             pageRendering = false,
             pageNumPending = null;
         const scale = 1.5;
-        const canvas = document.getElementById('pdfCanvas');
-        const ctx = canvas.getContext('2d');
+        const pdfCanvas = document.getElementById('pdfCanvas');
+        const markupCanvas = document.getElementById('markupCanvas');
+        const ctx = pdfCanvas.getContext('2d');
+        const markupCtx = markupCanvas.getContext('2d');
 
         function renderPage(num) {
             pageRendering = true;
             pdfDoc.getPage(num).then(page => {
                 const viewport = page.getViewport({ scale: scale });
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+                pdfCanvas.height = viewport.height;
+                pdfCanvas.width = viewport.width;
+                markupCanvas.height = viewport.height;
+                markupCanvas.width = viewport.width;
 
                 const renderContext = {
                     canvasContext: ctx,
@@ -131,6 +145,65 @@
 
         document.getElementById('prev').addEventListener('click', onPrevPage);
         document.getElementById('next').addEventListener('click', onNextPage);
+
+        // Drawing and Markup Tools Implementation
+        let isDrawing = false;
+        let tool = 'draw'; // Default tool
+
+        markupCanvas.addEventListener('mousedown', startDrawing);
+        markupCanvas.addEventListener('mousemove', draw);
+        markupCanvas.addEventListener('mouseup', stopDrawing);
+        markupCanvas.addEventListener('mouseout', stopDrawing);
+
+        function startDrawing(event) {
+            isDrawing = true;
+            markupCtx.beginPath();
+            markupCtx.moveTo(event.offsetX, event.offsetY);
+        }
+
+        function draw(event) {
+            if (!isDrawing) return;
+
+            switch (tool) {
+                case 'draw':
+                    markupCtx.lineWidth = 2;
+                    markupCtx.strokeStyle = '#FF0000'; // Red for drawing
+                    markupCtx.lineTo(event.offsetX, event.offsetY);
+                    markupCtx.stroke();
+                    break;
+                case 'highlight':
+                    markupCtx.lineWidth = 10;
+                    markupCtx.strokeStyle = 'rgba(255, 255, 0, 0.5)'; // Yellow, semi-transparent for highlight
+                    markupCtx.lineTo(event.offsetX, event.offsetY);
+                    markupCtx.stroke();
+                    break;
+                case 'addText':
+                    markupCtx.fillStyle = '#0000FF'; // Blue for text
+                    markupCtx.font = '20px Arial';
+                    markupCtx.fillText('Sample Text', event.offsetX, event.offsetY);
+                    isDrawing = false; // Stop after placing text
+                    break;
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            markupCtx.closePath();
+        }
+
+        document.getElementById('draw').addEventListener('click', () => tool = 'draw');
+        document.getElementById('highlight').addEventListener('click', () => tool = 'highlight');
+        document.getElementById('addText').addEventListener('click', () => tool = 'addText');
+
+        // Save Markups
+        document.getElementById('save').addEventListener('click', () => {
+            const markupDataUrl = markupCanvas.toDataURL();
+            const link = document.createElement('a');
+            link.href = markupDataUrl;
+            link.download = 'markup.png';
+            link.click();
+        });
+
     </script>
 </body>
 </html>
