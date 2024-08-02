@@ -48,10 +48,10 @@
     <script type="module">
         import * as pdfjsLib from './js/pdf.mjs';
 
-        // Specify the worker script location
+        // Set the worker source path
         pdfjsLib.GlobalWorkerOptions.workerSrc = './js/pdf.worker.mjs';
 
-        // Retrieve the PDF URL from the query parameters
+        // Get the PDF URL from the query parameters
         const urlParams = new URLSearchParams(window.location.search);
         const pdfUrl = urlParams.get('file');
 
@@ -60,7 +60,7 @@
             throw new Error("No PDF file specified in query parameters.");
         }
 
-        // Initiate the loading of the PDF
+        // Load the PDF
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
 
         let pdfDoc = null,
