@@ -48,19 +48,23 @@
     <script type="module">
         import * as pdfjsLib from './js/pdf.mjs';
 
-        // Specify the path to the PDF.js worker
+        // Set the path to the PDF.js worker script
         pdfjsLib.GlobalWorkerOptions.workerSrc = './js/pdf.worker.mjs';
 
-        // PDF.js Initialization
+        // Get the PDF URL from the query parameters
         const urlParams = new URLSearchParams(window.location.search);
-        const pdfUrl = urlParams.get('file'); // Expecting 'file' as the query parameter
+        const pdfUrl = urlParams.get('file');
 
         if (!pdfUrl) {
             alert("No PDF file specified. Please provide a valid URL.");
             throw new Error("No PDF file specified in query parameters.");
         }
 
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        const loadingTask = pdfjsLib.getDocument({
+            url: pdfUrl,
+            withCredentials: true, // Ensure credentials are used to handle CORS
+        });
+
         let pdfDoc = null,
             pageNum = 1,
             pageRendering = false,
